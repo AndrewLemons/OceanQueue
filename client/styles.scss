@@ -1,0 +1,68 @@
+@forward "element-plus/theme-chalk/src/common/var.scss" with (
+	$colors: (
+		"primary": (
+			"base": #28645a,
+		),
+	)
+);
+@use "element-plus/theme-chalk/src/dark/css-vars.scss" as *;
+@use "element-plus/theme-chalk/src/dark/var.scss" as *;
+@use "element-plus/theme-chalk/src/index.scss" as *;
+
+html {
+	font-family: "Inter", sans-serif;
+	overscroll-behavior: none;
+
+	-webkit-touch-callout: none; /* iOS Safari */
+	-webkit-user-select: none; /* Safari */
+	-khtml-user-select: none; /* Konqueror HTML */
+	-moz-user-select: none; /* Old versions of Firefox */
+	-ms-user-select: none; /* Internet Explorer/Edge */
+	user-select: none;
+}
+
+.mr-2 {
+	margin-right: 0.5rem;
+}
+
+.mb-2 {
+	margin-bottom: 0.5rem;
+}
+
+.space-between {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.printer-stack {
+	display: grid;
+	grid-template-columns: 1fr;
+	grid-gap: 1rem;
+}
+
+.printer-card {
+	width: 100%;
+}
+
+.card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.footer {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	padding: 5px 7px;
+	background-color: var(--el-bg-color-overlay);
+	border-top-right-radius: 4px;
+	box-shadow: var(--el-box-shadow-light);
+}
+
+@media (min-width: 1024px) {
+	.printer-stack {
+		grid-template-columns: 1fr 1fr;
+	}
+}

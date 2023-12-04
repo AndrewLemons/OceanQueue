@@ -1,0 +1,6 @@
+config.json
+
+/data
+/tmp
+/dist
+/node_modules
