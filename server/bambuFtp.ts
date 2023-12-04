@@ -14,7 +14,9 @@ export class BambuFtpClient {
 	}
 
 	async connect() {
+		console.log("CONNECT");
 		try {
+			console.log("Connecting to FTP server");
 			await this.client.access({
 				host: this.host,
 				port: this.port,
@@ -26,21 +28,27 @@ export class BambuFtpClient {
 				secure: "implicit",
 			});
 		} catch (err) {
+			console.log("Failed to connect to FTP server:");
 			console.log(err);
 		}
+		console.log("CONNECT DONE");
 	}
 
 	disconnect() {
+		console.log("Disconnecting from FTP server");
 		this.client.close();
 	}
 
 	async getModels() {
 		try {
 			await this.connect();
+			console.log("GET MODELS");
 			const models = await this.client.list("/model");
-			await this.disconnect();
+			console.log("GET MODELS DONE");
+			this.disconnect();
 			return models.map((model) => model.name);
 		} catch (err) {
+			console.log("Failed to get models:");
 			console.log(err);
 			return [];
 		}
@@ -49,9 +57,12 @@ export class BambuFtpClient {
 	async sendModel(filePath: string, fileName: string) {
 		try {
 			await this.connect();
+			console.log("SEND MODEL");
 			await this.client.uploadFrom(filePath, `/model/${fileName}`);
-			await this.disconnect();
+			console.log("SEND MODEL DONE");
+			this.disconnect();
 		} catch (err) {
+			console.log("Failed to send model:");
 			console.log(err);
 		}
 	}
@@ -59,9 +70,12 @@ export class BambuFtpClient {
 	async deleteModel(fileName: string) {
 		try {
 			await this.connect();
+			console.log("REMOVE MODEL");
 			await this.client.remove(`/model/${fileName}`);
-			await this.disconnect();
+			console.log("REMOVE MODEL DONE");
+			this.disconnect();
 		} catch (err) {
+			console.log("Failed to delete model:");
 			console.log(err);
 		}
 	}

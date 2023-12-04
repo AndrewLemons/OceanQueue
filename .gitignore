@@ -2,5 +2,5 @@ config.json
 
 /data
 /tmp
-/dist
+/dist-*
 /node_modules

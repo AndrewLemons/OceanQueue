@@ -33,34 +33,19 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 		let tokenParts = token.split(":");
 		if (tokenParts[0] !== KEY) {
 			reply.status(403);
-			return {
-				error: {
-					code: 403,
-					message: "Invalid API key",
-				},
-			};
+			return "Invalid API key given";
 		}
 
 		let printer = printers.find((p) => p.serial === tokenParts[1]);
 		if (!printer) {
 			reply.status(404);
-			return {
-				error: {
-					code: 404,
-					message: "Printer not found",
-				},
-			};
+			return "The requested printer does not exist";
 		}
 
 		const data = await request.file();
 		if (!data) {
 			reply.status(400);
-			return {
-				error: {
-					code: 400,
-					message: "Missing file",
-				},
-			};
+			return "No print file uploaded";
 		}
 		const fileName = data.filename;
 
@@ -81,7 +66,10 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 		await queueItem.updateFile(tmpPath);
 		await printer.onPrintUpload();
 
+		console.log("File upload completed");
+
 		// Act like this works
+		reply.status(204);
 		return {
 			files: {
 				local: {

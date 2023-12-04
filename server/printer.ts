@@ -1,5 +1,5 @@
-import BambuFtpClient from "./ftp";
-import BambuMqttClient from "./mqtt";
+import BambuFtpClient from "./bambuFtp";
+import BambuMqttClient from "./bambuMqtt";
 import { Queue, QueueItemState } from "./queue";
 
 export class BambuPrinter {
@@ -39,6 +39,7 @@ export class BambuPrinter {
 		this.mqttClient.connect();
 
 		this.mqttClient.listen(async (data: any) => {
+			console.log("State updated");
 			this.state.updateState(data);
 			await this.onStateUpdate();
 		});
@@ -47,7 +48,7 @@ export class BambuPrinter {
 	async onStateUpdate() {
 		let printHash = this.state.subtask_name.substring(0, 4);
 		let printState = this.state.gcode_state;
-		console.log("Printer state", printState);
+		console.log("State updated:", printState);
 
 		if (printState == "RUNNING") {
 			// If there is a queue
@@ -132,10 +133,13 @@ export class BambuPrinter {
 
 	async onPrintUpload() {
 		let printState = this.state.gcode_state;
+		console.log("Updating queue after print upload");
 
 		if (printState == "FINISH" || printState == "IDLE") {
+			console.log("Current state is IDLE or FINISH");
 			// If there is no queue
-			if (this.queue.items.length === 0) {
+			if (this.queue.items.length === 1) {
+				console.log("Preparing the next print");
 				await this.prepareNextPrint();
 			}
 		}
@@ -149,19 +153,20 @@ export class BambuPrinter {
 	}
 
 	private async prepareNextPrint() {
-		// Remove the old item(s)
-		await this.deleteModels();
-
-		// Send the new model file
 		let nextItem = this.queue.items[0];
-		await this.ftpClient.sendModel(
-			nextItem.getFilePath(),
-			nextItem.hash.substring(0, 4) + "-" + nextItem.fileName,
-		);
 
 		// Update the item state
 		nextItem.state = QueueItemState.SENT;
 		this.queue.update(nextItem);
+
+		// Remove the old item(s)
+		await this.deleteModels();
+
+		// Send the new model file
+		await this.ftpClient.sendModel(
+			nextItem.getFilePath(),
+			nextItem.hash.substring(0, 4) + "-" + nextItem.fileName,
+		);
 	}
 }
 
