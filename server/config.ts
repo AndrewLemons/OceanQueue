@@ -1,7 +1,8 @@
 import path from "node:path";
 import fs from "fs-extra";
 
-const configFile = fs.readJSONSync(path.resolve(__dirname, "../config.json"));
+const configPath = path.resolve(__dirname, process.env.CONFIG_FILE ?? "../config.json");
+const configFile = fs.readJSONSync(configPath);
 export const config = configFile as IConfiguration;
 
 config.dataPath = path.resolve(__dirname, "../", config.dataPath);
