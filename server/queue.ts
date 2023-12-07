@@ -137,7 +137,8 @@ export enum QueueItemState {
 	PRINTING = "printing",
 	COMPLETED = "completed",
 	FAILED = "failed",
-	SENT = "sent",
+	READY = "ready",
+	SENDING = "sending",
 }
 
 export default {

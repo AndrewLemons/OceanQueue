@@ -15,11 +15,15 @@ async function main() {
 	const server = fastify();
 
 	server.register(multipartPlugin);
+	server.register(octoprintRoutes, { prefix: "/api" });
+	server.register(oceanqueueRoutes, { prefix: "/oceanqueue" });
+
 	server.register(staticPlugin, {
 		root: path.resolve(__dirname, "../dist-client"),
 	});
-	server.register(octoprintRoutes, { prefix: "/api" });
-	server.register(oceanqueueRoutes, { prefix: "/oceanqueue" });
+	server.get("/kiosk", async (request, reply) => {
+		return reply.sendFile("index.html");
+	});
 
 	server.listen({
 		host: "0.0.0.0",

@@ -76,8 +76,8 @@ export class BambuPrinter {
 		if (printState === "RUNNING" || printState === "PREPARE") {
 			// Update the state of the latest queue item if...
 			if (
-				this.queue.items[0].hash.substring(0, 4) == printHash && // it is running
-				this.queue.items[0].state == QueueItemState.SENT // It is currently marked as sent
+				this.queue.items[0].hash.substring(0, 4) === printHash && // it is running
+				this.queue.items[0].state === QueueItemState.READY // It is currently marked as ready
 			) {
 				let item = this.queue.items[0];
 				item.state = QueueItemState.PRINTING;
@@ -101,7 +101,7 @@ export class BambuPrinter {
 
 		if (printState == "IDLE") {
 			// If the next item has not been sent yet...
-			if (this.queue.items[0].state !== QueueItemState.SENT) {
+			if (this.queue.items[0].state !== QueueItemState.READY) {
 				await this.prepareNextQueueItem();
 			}
 		}
@@ -109,7 +109,7 @@ export class BambuPrinter {
 		if (printState == "FINISH") {
 			let item = this.queue.items[0];
 
-			if (item.state === QueueItemState.SENT) {
+			if (item.state === QueueItemState.READY) {
 				// We have already sent the new item
 				return;
 			}
@@ -159,13 +159,24 @@ export class BambuPrinter {
 		}
 
 		let item = this.queue.items[0];
-		if (item.state !== QueueItemState.SENT) {
+		if (item.state !== QueueItemState.READY) {
 			await this.prepareNextQueueItem();
 		}
 	}
 
 	private async prepareNextQueueItem() {
 		let nextItem = this.queue.items[0];
+
+		if (
+			nextItem.state === QueueItemState.SENDING ||
+			nextItem.state === QueueItemState.READY
+		) {
+			console.log("[PREPARE] Already preparing next queue item");
+			return;
+		}
+
+		nextItem.state = QueueItemState.SENDING;
+		this.queue.update(nextItem);
 
 		console.log("[PREPARE] Preparing next queue item");
 
@@ -176,7 +187,7 @@ export class BambuPrinter {
 		await this.sendModel(nextItem);
 
 		// Update the item state
-		nextItem.state = QueueItemState.SENT;
+		nextItem.state = QueueItemState.READY;
 		this.queue.update(nextItem);
 	}
 }
