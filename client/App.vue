@@ -101,9 +101,7 @@ export default {
 				text: "Loading",
 				background: "rgba(0, 0, 0, 0.7)",
 			});
-			console.log("Start");
 			await Promise.all([this.load, new Promise((r) => setTimeout(r, 500))]);
-			console.log("Stop");
 			loading.close();
 		},
 		update() {

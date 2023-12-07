@@ -64,9 +64,8 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 
 		const queueItem = printer.queue.add(fileName, fileHash);
 		await queueItem.updateFile(tmpPath);
-		await printer.onPrintUpload();
 
-		console.log("File upload completed");
+		console.log("[UPLOAD] File uploaded");
 
 		// Act like this works
 		reply.status(204);

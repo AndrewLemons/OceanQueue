@@ -77,6 +77,7 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 		let queueItem = printer.queue.items.find(
 			(item) => item.id == request.params.queueItemId,
 		);
+
 		if (!queueItem) {
 			reply.status(404);
 			return {
@@ -84,7 +85,9 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 				message: "Queue item not found",
 			};
 		}
+
 		printer.queue.remove(queueItem);
+		printer.syncQueue();
 
 		return {
 			success: true,

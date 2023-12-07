@@ -14,9 +14,7 @@ export class BambuFtpClient {
 	}
 
 	async connect() {
-		console.log("CONNECT");
 		try {
-			console.log("Connecting to FTP server");
 			await this.client.access({
 				host: this.host,
 				port: this.port,
@@ -27,29 +25,28 @@ export class BambuFtpClient {
 				},
 				secure: "implicit",
 			});
+			console.log("[FTP] Connected to printer");
 		} catch (err) {
-			console.log("Failed to connect to FTP server:");
+			console.log("[FTP] Connection failed");
 			console.log(err);
 		}
-		console.log("CONNECT DONE");
 	}
 
 	disconnect() {
-		console.log("Disconnecting from FTP server");
 		this.client.close();
+		console.log("[FTP] Disconnected from printer");
 	}
 
 	async getModels() {
 		try {
 			await this.connect();
-			console.log("GET MODELS");
 			const models = await this.client.list("/model");
-			console.log("GET MODELS DONE");
+			console.log("[FTP] Received models");
 			this.disconnect();
 			return models.map((model) => model.name);
 		} catch (err) {
-			console.log("Failed to get models:");
-			console.log(err);
+			console.log("[FTP] Failed to get models:");
+			console.log(err.message ?? err);
 			return [];
 		}
 	}
@@ -57,26 +54,27 @@ export class BambuFtpClient {
 	async sendModel(filePath: string, fileName: string) {
 		try {
 			await this.connect();
-			console.log("SEND MODEL");
+			console.log(
+				`[FTP] Sending model '${fileName}', this may take a while...`,
+			);
 			await this.client.uploadFrom(filePath, `/model/${fileName}`);
-			console.log("SEND MODEL DONE");
+			console.log(`[FTP] Sent model`);
 			this.disconnect();
 		} catch (err) {
-			console.log("Failed to send model:");
-			console.log(err);
+			console.log("[FTP] Failed to send model:");
+			console.log(err.message ?? err);
 		}
 	}
 
 	async deleteModel(fileName: string) {
 		try {
 			await this.connect();
-			console.log("REMOVE MODEL");
 			await this.client.remove(`/model/${fileName}`);
-			console.log("REMOVE MODEL DONE");
+			console.log(`[FTP] Deleted model '${fileName}'`);
 			this.disconnect();
 		} catch (err) {
-			console.log("Failed to delete model:");
-			console.log(err);
+			console.log("[FTP] Failed to delete model:");
+			console.log(err.message ?? err);
 		}
 	}
 }

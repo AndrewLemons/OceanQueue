@@ -23,9 +23,6 @@ export class BambuMqttClient {
 	}
 
 	connect() {
-		console.log(
-			"Connecting MQTT client at " + `mqtt://${this.host}:${this.port}`,
-		);
 		this.client = mqtt.connect(`mqtt://${this.host}:${this.port}`, {
 			username: "bblp",
 			password: this.accessCode,
@@ -40,12 +37,9 @@ export class BambuMqttClient {
 
 	#onConnect() {
 		if (!this.client) return;
-
-		console.log("MQTT client connected");
-
-		console.log(`subscribing to device/${this.serial}/report`);
-
+		console.log("[MQTT] Connected to printer");
 		this.client.subscribe(`device/${this.serial}/report`);
+		console.log("[MQTT] Subscribed to printer");
 		this.client.publish(
 			`device/${this.serial}/request`,
 			JSON.stringify({ pushing: { sequence_id: "0", command: "pushall" } }),

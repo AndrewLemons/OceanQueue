@@ -1,6 +1,6 @@
 import BambuFtpClient from "./bambuFtp";
 import BambuMqttClient from "./bambuMqtt";
-import { Queue, QueueItemState } from "./queue";
+import { Queue, QueueItem, QueueItemState } from "./queue";
 
 export class BambuPrinter {
 	host: string;
@@ -11,6 +11,9 @@ export class BambuPrinter {
 	queue: Queue;
 	ftpClient: BambuFtpClient;
 	mqttClient: BambuMqttClient;
+
+	lastState: string;
+	lastQueueLength: number;
 
 	constructor(
 		host: string,
@@ -33,13 +36,15 @@ export class BambuPrinter {
 			this.code,
 			mqttPort,
 		);
+
+		this.lastState = "";
+		this.lastQueueLength = -1;
 	}
 
 	async connect() {
 		this.mqttClient.connect();
 
 		this.mqttClient.listen(async (data: any) => {
-			console.log("State updated");
 			this.state.updateState(data);
 			await this.onStateUpdate();
 		});
@@ -48,125 +53,131 @@ export class BambuPrinter {
 	async onStateUpdate() {
 		let printHash = this.state.subtask_name.substring(0, 4);
 		let printState = this.state.gcode_state;
-		console.log("State updated:", printState);
 
-		if (printState == "RUNNING") {
-			// If there is a queue
-			if (this.queue.items.length > 0) {
-				// And the last item matches
-				if (
-					this.queue.items[0].hash.substring(0, 4) == printHash &&
-					this.queue.items[0].state == QueueItemState.SENT
-				) {
-					// Update the item state
-					let item = this.queue.items[0];
-					item.state = QueueItemState.PRINTING;
-					this.queue.update(item);
-				}
+		if (printState !== this.lastState) {
+			// Update the state if it has changed
+			console.log(`[UPDATE] State changed to ${printState}`);
+		} else if (this.queue.items.length !== this.lastQueueLength) {
+			// Update if the queue length has changed
+			console.log("[UPDATE] Queue changed");
+		} else {
+			// Don't update if nothing has changed
+			return;
+		}
+
+		this.lastQueueLength = this.queue.items.length;
+		this.lastState = this.state.gcode_state;
+
+		if (this.queue.items.length === 0) {
+			// If the queue is empty, return
+			return;
+		}
+
+		if (printState === "RUNNING" || printState === "PREPARE") {
+			// Update the state of the latest queue item if...
+			if (
+				this.queue.items[0].hash.substring(0, 4) == printHash && // it is running
+				this.queue.items[0].state == QueueItemState.SENT // It is currently marked as sent
+			) {
+				let item = this.queue.items[0];
+				item.state = QueueItemState.PRINTING;
+				this.queue.update(item);
 			}
 		}
 
 		if (printState === "FAILED") {
-			// If there is a queue and the hash matches
-			if (this.queue.items.length > 0) {
-				if (this.queue.items[0].hash.substring(0, 4) == printHash) {
-					// Update the item state
-					let item = this.queue.items[0];
-					item.state = QueueItemState.FAILED;
-					this.queue.update(item);
-				} else {
-					await this.prepareNextPrint();
-				}
+			// If the latest queue item has failed
+			if (this.queue.items[0].hash.substring(0, 4) == printHash) {
+				// Update the item state for a human to handle it
+				let item = this.queue.items[0];
+				item.state = QueueItemState.FAILED;
+				this.queue.update(item);
+			} else {
+				// Remove the unknown item and prepare the next queue item
+				console.log("[UPDATE] Printer has failed with unknown job");
+				await this.prepareNextQueueItem();
 			}
 		}
 
 		if (printState == "IDLE") {
-			// If there is a queue
-			if (this.queue.items.length > 0) {
-				// And if the next item has not been sent
-				if (this.queue.items[0].state !== QueueItemState.SENT) {
-					await this.prepareNextPrint();
-				}
+			// If the next item has not been sent yet...
+			if (this.queue.items[0].state !== QueueItemState.SENT) {
+				await this.prepareNextQueueItem();
 			}
 		}
 
 		if (printState == "FINISH") {
-			// If there is a queue
-			if (this.queue.items.length > 0) {
-				if (this.queue.items[0].state == QueueItemState.SENT) {
-					// We have sent the next item, it has not been started yet
-					return;
-				}
+			let item = this.queue.items[0];
 
-				// Remove the old item(s)
-				let models = await this.ftpClient.getModels();
-				console.log("Delete the old model files");
-				for (let model of models) {
-					await this.ftpClient.deleteModel(model);
-				}
+			if (item.state === QueueItemState.SENT) {
+				// We have already sent the new item
+				return;
+			}
 
-				// And the last item matches
-				if (this.queue.items[0].hash.substring(0, 4) == printHash) {
-					// Remove the item
-					console.log("Unqueue the printer item");
-					this.queue.remove(this.queue.items[0]);
-
-					if (this.queue.items.length === 0) {
-						return;
-					}
-				}
-
-				// Send the next item
-				console.log("Send the new model file");
-				let nextItem = this.queue.items[0];
-				await this.ftpClient.sendModel(
-					nextItem.getFilePath(),
-					nextItem.hash.substring(0, 4) + "-" + nextItem.fileName,
+			if (item.hash.substring(0, 4) === printHash) {
+				// The item is completed, remove it from the queue
+				console.log(
+					`[UPDATE] Printer has finished ${item.hash.substring(0, 4)}`,
 				);
 
-				// Update the item state
-				nextItem.state = QueueItemState.SENT;
-				this.queue.update(nextItem);
-			}
-		}
-	}
+				this.queue.remove(item);
 
-	async onPrintUpload() {
-		let printState = this.state.gcode_state;
-		console.log("Updating queue after print upload");
-
-		if (printState == "FINISH" || printState == "IDLE") {
-			console.log("Current state is IDLE or FINISH");
-			// If there is no queue
-			if (this.queue.items.length === 1) {
-				console.log("Preparing the next print");
-				await this.prepareNextPrint();
+				// If the queue is now empty, return
+				if (this.queue.items.length === 0) {
+					return;
+				}
 			}
+
+			// Prepare the next item
+			await this.prepareNextQueueItem();
 		}
 	}
 
 	private async deleteModels() {
+		console.log(`[CLEAN] Removing old model files`);
+
 		let models = await this.ftpClient.getModels();
 		for (let model of models) {
 			await this.ftpClient.deleteModel(model);
 		}
 	}
 
-	private async prepareNextPrint() {
+	private async sendModel(queueItem: QueueItem) {
+		let modelPath = queueItem.getFilePath();
+		let modelName = queueItem.hash.substring(0, 4) + "-" + queueItem.fileName;
+
+		console.log(
+			`[SEND] Sending model file '${this.queue.items[0].hash.substring(0, 4)}'`,
+		);
+
+		await this.ftpClient.sendModel(modelPath, modelName);
+	}
+
+	async syncQueue() {
+		if (this.queue.items.length === 0) {
+			return;
+		}
+
+		let item = this.queue.items[0];
+		if (item.state !== QueueItemState.SENT) {
+			await this.prepareNextQueueItem();
+		}
+	}
+
+	private async prepareNextQueueItem() {
 		let nextItem = this.queue.items[0];
 
-		// Update the item state
-		nextItem.state = QueueItemState.SENT;
-		this.queue.update(nextItem);
+		console.log("[PREPARE] Preparing next queue item");
 
 		// Remove the old item(s)
 		await this.deleteModels();
 
 		// Send the new model file
-		await this.ftpClient.sendModel(
-			nextItem.getFilePath(),
-			nextItem.hash.substring(0, 4) + "-" + nextItem.fileName,
-		);
+		await this.sendModel(nextItem);
+
+		// Update the item state
+		nextItem.state = QueueItemState.SENT;
+		this.queue.update(nextItem);
 	}
 }
 
@@ -179,6 +190,8 @@ export class BambuPrinterState {
 	mc_remaining_time: number;
 	subtask_name: string;
 
+	lastChanges: string[];
+
 	constructor(initialState: any = {}) {
 		this.gcode_file = initialState["gcode_file"] ?? "";
 		this.gcode_state = initialState["gcode_state"] ?? "";
@@ -187,6 +200,8 @@ export class BambuPrinterState {
 		this.mc_percent = initialState["mc_percent"] ?? 0;
 		this.mc_remaining_time = initialState["mc_remaining_time"] ?? 0;
 		this.subtask_name = initialState["subtask_name"] ?? "";
+
+		this.lastChanges = [];
 	}
 
 	updateState(source: any = {}) {
@@ -201,6 +216,9 @@ export class BambuPrinterState {
 			this.mc_remaining_time =
 				source.print.mc_remaining_time ?? this.mc_remaining_time;
 			this.subtask_name = source.print.subtask_name ?? this.subtask_name;
+
+			// Update the last changes
+			this.lastChanges = Object.keys(source.print);
 		}
 	}
 
