@@ -55,7 +55,7 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 		hash.write(new Date().toISOString());
 		hash.write(fileName);
 		hash.end();
-		const fileHash = hash.read();
+		const fileHash: string = hash.read().toUpperCase();
 
 		// Save the file to a temp location
 		const tmpPath = path.join(__dirname, "..", "..", "tmp", fileHash);
