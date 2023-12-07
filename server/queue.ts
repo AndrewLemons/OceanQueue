@@ -45,7 +45,6 @@ export class Queue {
 		state: QueueItemState = QueueItemState.QUEUED,
 	): QueueItem {
 		const idx = this.items.length;
-		console.log(this.printerSerial, fileName, hash, state, idx);
 		const result = db
 			.prepare(
 				`
