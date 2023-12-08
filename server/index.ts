@@ -14,7 +14,12 @@ async function main() {
 
 	const server = fastify();
 
-	server.register(multipartPlugin);
+	server.register(multipartPlugin, {
+		limits: {
+			files: 1,
+			fileSize: 25_000_000, // 25 MB
+		},
+	});
 	server.register(octoprintRoutes, { prefix: "/api" });
 	server.register(oceanqueueRoutes, { prefix: "/oceanqueue" });
 

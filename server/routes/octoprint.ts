@@ -49,6 +49,12 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 		}
 		const fileName = data.filename;
 
+		// Throw an error if the file is too big
+		if (data.file.truncated) {
+			reply.status(400);
+			return "Print file too large";
+		}
+
 		// Get the hash of the uploaded file
 		const hash = crypto.createHash("sha256");
 		hash.setEncoding("hex");
