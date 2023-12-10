@@ -41,11 +41,26 @@
 		</el-main>
 	</el-container>
 	<div class="footer">
-		<a href="https://github.com/AndrewLemons/OceanQueue">
-			<Logo />
+		<a
+			:href="`https://github.com/AndrewLemons/OceanQueue/tree/${gitCommit}`"
+			class="logo"
+		>
+			<Logo /> <span>@{{ gitCommit }}</span>
 		</a>
 	</div>
 </template>
+
+<style scoped>
+.logo {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+	font-size: 0.5rem;
+	gap: 0.5rem;
+	color: #fff;
+}
+</style>
 
 <script>
 import { ElLoading } from "element-plus";
@@ -53,6 +68,8 @@ import { ElLoading } from "element-plus";
 import RefreshIcon from "../components/RefreshIcon.vue";
 import Logo from "../components/Logo.vue";
 import QueueItem from "../components/QueueItem.vue";
+
+const gitCommit = import.meta.env.VITE_GIT_COMMIT;
 
 export default {
 	components: {
@@ -64,6 +81,7 @@ export default {
 		return {
 			printers: [],
 			RefreshIcon,
+			gitCommit,
 		};
 	},
 	methods: {
