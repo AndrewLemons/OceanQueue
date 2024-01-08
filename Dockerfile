@@ -4,6 +4,10 @@ FROM node:20-slim AS base
 # Setup #
 #########
 
+# Install git
+RUN apt-get -y update
+RUN apt-get -y install git
+
 # Install PNPM
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
