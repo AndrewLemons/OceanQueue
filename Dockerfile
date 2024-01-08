@@ -31,11 +31,6 @@ FROM base AS build
 # Install all dependencies
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-# Platform specific dependencies
-# Change these to match the target platform
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm add @esbuild/linux-arm64
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm add @rollup/rollup-linux-arm64-gnu
-
 # Run builds
 RUN pnpm run build:client
 RUN pnpm run build:server
