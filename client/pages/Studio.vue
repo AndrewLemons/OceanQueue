@@ -41,24 +41,23 @@
 		</el-main>
 	</el-container>
 	<div class="footer">
-		<a
-			:href="`https://github.com/AndrewLemons/OceanQueue/tree/${gitCommit}`"
-			class="logo"
-		>
-			<Logo /> <span>@{{ gitCommit }}</span>
-		</a>
+		<Logo @click="versionDialogVisible = true" style="cursor: pointer" />
 	</div>
+	<el-dialog v-model="versionDialogVisible" width="30%">
+		<div class="dialog">
+			<Logo height="4rem" />
+			<span>Version @{{ gitCommit }}</span>
+			<span>Created with ❤️ by the HIVE.</span>
+			<GithubCode />
+		</div>
+	</el-dialog>
 </template>
 
 <style scoped>
-.logo {
+.dialog {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
-	justify-content: center;
-	text-decoration: none;
-	font-size: 0.5rem;
-	gap: 0.5rem;
-	color: #fff;
 }
 </style>
 
@@ -68,6 +67,7 @@ import { ElLoading } from "element-plus";
 import RefreshIcon from "../components/RefreshIcon.vue";
 import Logo from "../components/Logo.vue";
 import QueueItem from "../components/QueueItem.vue";
+import GithubCode from "../components/GithubCode.vue";
 
 const gitCommit = import.meta.env.VITE_GIT_COMMIT;
 
@@ -76,12 +76,14 @@ export default {
 		RefreshIcon,
 		Logo,
 		QueueItem,
+		GithubCode,
 	},
 	data() {
 		return {
 			printers: [],
 			RefreshIcon,
 			gitCommit,
+			versionDialogVisible: false,
 		};
 	},
 	methods: {

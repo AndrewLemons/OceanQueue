@@ -1,6 +1,25 @@
+<script>
+import { defineComponent } from "vue";
+
+export default defineComponent({
+	name: "Logo",
+	props: {
+		height: {
+			type: String,
+			default: "2rem",
+		},
+		width: {
+			type: String,
+			default: "auto",
+		},
+	},
+});
+</script>
+
 <template>
 	<svg
-		height="2rem"
+		:width="width"
+		:height="height"
 		viewBox="0 0 666 177"
 		fill="none"
 		xmlns="http://www.w3.org/2000/svg"
