@@ -40,13 +40,18 @@ export class BambuFtpClient {
 	async getModels() {
 		try {
 			await this.connect();
+
+			// Create directory if it doesn't exist
+			await this.client.ensureDir("/model");
+
+			// Get models
 			const models = await this.client.list("/model");
 			console.log("[FTP] Received models");
+
 			this.disconnect();
 			return models.map((model) => model.name);
 		} catch (err) {
-			console.log("[FTP] Failed to get models:");
-			console.log(err.message ?? err);
+			console.log(`[FTP] Failed to get models: ${err.message ?? err}`);
 			return [];
 		}
 	}
@@ -54,15 +59,20 @@ export class BambuFtpClient {
 	async sendModel(filePath: string, fileName: string) {
 		try {
 			await this.connect();
+
+			// Create directory if it doesn't exist
+			await this.client.ensureDir("/model");
+
+			// Upload file
 			console.log(
 				`[FTP] Sending model '${fileName}', this may take a while...`,
 			);
 			await this.client.uploadFrom(filePath, `/model/${fileName}`);
 			console.log(`[FTP] Sent model`);
+
 			this.disconnect();
 		} catch (err) {
-			console.log("[FTP] Failed to send model:");
-			console.log(err.message ?? err);
+			console.log(`[FTP] Failed to send model: ${err.message ?? err}`);
 		}
 	}
 
