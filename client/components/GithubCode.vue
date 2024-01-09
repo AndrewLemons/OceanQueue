@@ -8,6 +8,7 @@ export default defineComponent({
 
 <template>
 	<svg
+		width="250"
 		viewBox="0 0 296 296"
 		xmlns="http://www.w3.org/2000/svg"
 		xmlns:xlink="http://www.w3.org/1999/xlink"

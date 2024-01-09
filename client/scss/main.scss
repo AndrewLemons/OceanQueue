@@ -1,13 +1,9 @@
-@forward "element-plus/theme-chalk/src/common/var.scss" with (
-	$colors: (
-		"primary": (
-			"base": #00ae42,
-		),
-	)
-);
-@use "element-plus/theme-chalk/src/dark/css-vars.scss" as *;
-@use "element-plus/theme-chalk/src/dark/var.scss" as *;
-@use "element-plus/theme-chalk/src/index.scss" as *;
+@use "./tailwind.scss";
+@use "./element.scss";
+
+/*
+	Custom
+*/
 
 html {
 	font-family: "Inter", sans-serif;
@@ -21,20 +17,6 @@ html {
 	user-select: none;
 }
 
-.mr-2 {
-	margin-right: 0.5rem;
-}
-
-.mb-2 {
-	margin-bottom: 0.5rem;
-}
-
-.space-between {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-}
-
 .printer-stack {
 	display: grid;
 	grid-template-columns: 1fr;
@@ -43,12 +25,6 @@ html {
 
 .printer-card {
 	width: 100%;
-}
-
-.card-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
 }
 
 .footer {

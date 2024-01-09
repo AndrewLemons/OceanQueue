@@ -3,9 +3,10 @@
 	"version": "0.0.1",
 	"scripts": {
 		"start": "node ./dist-server/index.js",
-		"start:dev": "ts-node ./server/index.ts",
 		"build:client": "vite build",
 		"build:server": "tsc -p .",
+		"dev:server": "ts-node ./server/index.ts",
+		"dev:client": "vite build -w --mode development",
 		"format": "prettier --write ."
 	},
 	"dependencies": {
@@ -17,14 +18,19 @@
 		"fastify": "^4.24.3",
 		"fs-extra": "^11.2.0",
 		"mqtt": "^5.3.1",
-		"vue": "^3.3.9"
+		"pinia": "^2.1.7",
+		"vue": "^3.3.9",
+		"vue-router": "^4.2.5"
 	},
 	"devDependencies": {
 		"@types/better-sqlite3": "^7.6.8",
 		"@types/fs-extra": "^11.0.4",
 		"@vitejs/plugin-vue": "^4.5.0",
+		"autoprefixer": "^10.4.16",
+		"postcss": "^8.4.33",
 		"prettier": "^3.1.0",
 		"sass": "^1.69.5",
+		"tailwindcss": "^3.4.1",
 		"ts-node": "^10.9.1",
 		"typescript": "^5.3.2",
 		"vite": "^5.0.4"
