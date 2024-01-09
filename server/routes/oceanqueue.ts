@@ -8,6 +8,10 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 			serial: printer.serial,
 			current: printer.state.gcode_file,
 			state: printer.state.gcode_state,
+			progress: printer.state.mc_percent / 100,
+			remaining: printer.state.mc_remaining_time,
+			queueSize: printer.queue.items.length,
+			firstQueueItem: printer.queue.items[0],
 		}));
 
 		return {
@@ -18,11 +22,11 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 
 	fastify.get<{
 		Params: {
-			printer: string;
+			serial: string;
 		};
-	}>("/printers/:printer", async (request, reply) => {
+	}>("/printers/:serial", async (request, reply) => {
 		let printer = printers.find(
-			(printer) => printer.serial === request.params.printer,
+			(printer) => printer.serial === request.params.serial,
 		);
 
 		if (!printer) {
@@ -35,24 +39,12 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 
 		return {
 			success: true,
-			printer: printer.state,
-		};
-	});
-
-	fastify.get("/printers/queues", async (request, reply) => {
-		let printerMap = printers.map((printer) => ({
-			name: printer.name,
-			serial: printer.serial,
-			current: printer.state.gcode_file,
-			state: printer.state.gcode_state,
-			progress: printer.state.mc_percent / 100,
-			remaining: printer.state.mc_remaining_time,
-			queue: printer.queue.getAll(),
-		}));
-
-		return {
-			success: true,
-			printers: printerMap,
+			printer: {
+				name: printer.name,
+				serial: printer.serial,
+				...printer.state,
+				queue: printer.queue.getAll(),
+			},
 		};
 	});
 
@@ -61,7 +53,7 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 			printerSerial: string;
 			queueItemId: number;
 		};
-	}>("/printers/queues/:printerSerial/:queueItemId", async (request, reply) => {
+	}>("/printers/:printerSerial/queue/:queueItemId", async (request, reply) => {
 		let printer = printers.find(
 			(printer) => printer.serial === request.params.printerSerial,
 		);

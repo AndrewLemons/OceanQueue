@@ -7,6 +7,8 @@ import { FastifyPluginAsync } from "fastify";
 import { MultipartFile } from "@fastify/multipart";
 import { printers } from "../state";
 import config from "../config";
+import Metadata from "../metadata";
+import { QueueItemState } from "../queue";
 
 const pump = util.promisify(pipeline);
 
@@ -68,7 +70,15 @@ const router: FastifyPluginAsync = async (fastify, opts) => {
 		await fs.ensureDir(path.dirname(tmpPath));
 		await pump(data.file, fs.createWriteStream(tmpPath));
 
-		const queueItem = printer.queue.add(fileName, fileHash);
+		// Parse the metadata
+		const metadata = await Metadata.parseFromFile(tmpPath);
+
+		const queueItem = printer.queue.add(
+			fileName,
+			fileHash,
+			QueueItemState.QUEUED,
+			metadata,
+		);
 		await queueItem.updateFile(tmpPath);
 
 		console.log("[UPLOAD] File uploaded");

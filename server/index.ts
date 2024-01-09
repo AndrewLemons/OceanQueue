@@ -26,9 +26,6 @@ async function main() {
 	server.register(staticPlugin, {
 		root: path.resolve(__dirname, "../dist-client"),
 	});
-	server.get("/kiosk", async (request, reply) => {
-		return reply.sendFile("index.html");
-	});
 
 	server.listen({
 		host: "0.0.0.0",

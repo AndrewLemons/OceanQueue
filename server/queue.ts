@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "fs-extra";
 import config from "./config";
 import sqlite from "better-sqlite3";
+import Metadata from "./metadata";
 
 const db = new sqlite(`${config.dataPath}/index`);
 
@@ -12,6 +13,10 @@ db.exec(`
 		fileName TEXT NOT NULL,
 		hash TEXT NOT NULL,
 		state TEXT NOT NULL,
+		image TEXT NOT NULL DEFAULT '',
+		printTime INTEGER NOT NULL DEFAULT 0,
+		layerCount INTEGER NOT NULL DEFAULT 0,
+		materials TEXT NOT NULL DEFAULT '[]',
 		idx INTEGER NOT NULL
 	);
 `);
@@ -35,7 +40,20 @@ export class Queue {
 			.all(this.printerSerial) as IQueueItemRow[];
 
 		rows.forEach((row) => {
-			this.items.push(new QueueItem(row.id, row.fileName, row.hash, row.state));
+			this.items.push(
+				new QueueItem(
+					row.id,
+					row.fileName,
+					row.hash,
+					row.state,
+					new Metadata(
+						row.image,
+						JSON.parse(row.materials),
+						row.printTime,
+						row.layerCount,
+					),
+				),
+			);
 		});
 	}
 
@@ -43,22 +61,45 @@ export class Queue {
 		fileName: string,
 		hash: string,
 		state: QueueItemState = QueueItemState.QUEUED,
+		metadata: Metadata = new Metadata(),
 	): QueueItem {
 		const idx = this.items.length;
+		console.log(
+			this.printerSerial,
+			fileName,
+			hash,
+			state,
+			idx,
+			metadata.image,
+			metadata.printTime,
+			metadata.layers,
+			JSON.stringify(metadata.materials),
+		);
 		const result = db
 			.prepare(
 				`
-			INSERT INTO QueueItems (printer, fileName, hash, state, idx)
-			VALUES (?, ?, ?, ?, ?);
+			INSERT INTO QueueItems (printer, fileName, hash, state, idx, image, printTime, layerCount, materials)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 		`,
 			)
-			.run(this.printerSerial, fileName, hash, state, idx);
+			.run(
+				this.printerSerial,
+				fileName,
+				hash,
+				state,
+				idx,
+				metadata.image,
+				metadata.printTime,
+				metadata.layers,
+				JSON.stringify(metadata.materials),
+			);
 
 		const queueItem = new QueueItem(
 			result.lastInsertRowid as number,
 			fileName,
 			hash,
 			state,
+			metadata,
 		);
 		this.items.push(queueItem);
 		return queueItem;
@@ -100,17 +141,20 @@ export class QueueItem {
 	fileName: string;
 	hash: string;
 	state: QueueItemState;
+	metadata: Metadata;
 
 	constructor(
 		id: number,
 		fileName: string,
 		hash: string,
 		state: QueueItemState,
+		metadata: Metadata = new Metadata(),
 	) {
 		this.id = id;
 		this.fileName = fileName;
 		this.hash = hash;
 		this.state = state;
+		this.metadata = metadata;
 	}
 
 	getFilePath(): string {
@@ -153,4 +197,8 @@ interface IQueueItemRow {
 	hash: string;
 	state: QueueItemState;
 	idx: number;
+	image: string;
+	printTime: number;
+	layerCount: number;
+	materials: string;
 }

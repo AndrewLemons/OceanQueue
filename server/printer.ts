@@ -124,6 +124,8 @@ export class BambuPrinter {
 
 				// If the queue is now empty, return
 				if (this.queue.items.length === 0) {
+					// Only delete models if the queue is empty so we don't do it twice later
+					await this.deleteModels();
 					return;
 				}
 			}
